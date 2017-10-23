@@ -9,6 +9,7 @@ import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.Function;
+import org.apache.geode.cache.execute.FunctionException;
 import org.apache.geode.cache.execute.FunctionService;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
@@ -113,8 +114,9 @@ public class DynamicSecurityManager implements SecurityManager {
 				try {
 					result = authenticateOnMember(gotoMember, uname, pass);
 					return result; //RETURN
-				} catch(AuthenticateFunction.RegionNotFoundException nfx){
-					//
+				} catch(FunctionException fx){
+					// TODO - should check to make sure this really is the AuthenticateFunction.RegionNotFoundException 
+					//        not sure if it is in the cause or in getExceptions
 				}
 			}
 			
@@ -125,12 +127,14 @@ public class DynamicSecurityManager implements SecurityManager {
 					result = authenticateOnMember(m, uname, pass);
 					gotoMember = m;
 					return result; //RETURN
-				} catch(AuthenticateFunction.RegionNotFoundException nfx){
-					//
-				}				
+				} catch(FunctionException fx){
+					// TODO - should check to make sure this really is the AuthenticateFunction.RegionNotFoundException 
+					//        not sure if it is in the cause or in getExceptions
+				}
 			}
 		}
-		
+
+		// if we are here we didn't successfully execute the AuthenticateFunction anywhere
 		throw new AuthenticationFailedException("Something unexpected happened during authentication");
 	}
 

@@ -4,7 +4,7 @@
 
 	<groupId>io.pivotal.pde</groupId>
 	<artifactId>gemfire-dynamic-security</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>gemfire-dynamic-security</name>
