@@ -4,7 +4,7 @@
 
 	<groupId>io.pivotal.pde</groupId>
 	<artifactId>gemfire-dynamic-security</artifactId>
-	<version>1.0.4-SNAPSHOT</version>
+	<version>1.0.4</version>
 	<packaging>jar</packaging>
 
 	<name>gemfire-dynamic-security</name>
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>io.pivotal.gemfire</groupId>
 			<artifactId>geode-core</artifactId>
-			<version>9.1.1</version>
+			<version>9.2.0</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
