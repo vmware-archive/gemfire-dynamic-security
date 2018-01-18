@@ -64,13 +64,13 @@ public class DynamicSecurityManager implements SecurityManager {
 			throw new RuntimeException("Could not initialize security manager due to missing required property: " + SECURITY_ADMIN_PASS_PROP);		
 	}
 	
-	private Principal authenticateOnMember(DistributedMember m, String uname, String pass){
+	private Object authenticateOnMember(DistributedMember m, String uname, String pass){
 		Execution exec = FunctionService.onMember(m).setArguments(new String[]{uname, pass});
 		Function f = new AuthenticateFunction();
-		ResultCollector<Principal, List<Principal>> results = exec.execute(f);
-		List<Principal> plist = results.getResult();
-		if (plist.size() < 1)
-			throw new RuntimeException("Unexpected behavior: AuthenticateFunction returned multiple results");
+		ResultCollector<Object, List<Object>> results = exec.execute(f);
+		List<Object> plist = results.getResult();
+		if (plist.size() != 1)
+			throw new AuthenticationFailedException("Unexpected behavior: AuthenticateFunction returned " + plist.size() +  " results");
 		
 		return plist.get(0);
 	}
@@ -114,8 +114,8 @@ public class DynamicSecurityManager implements SecurityManager {
 				try {
 					result = authenticateOnMember(gotoMember, uname, pass);
 					return result; //RETURN
-				} catch(AuthenticateFunction.RegionNotFoundException nfx){
-					//
+				} catch(Exception  x){
+					// ok
 				}
 			}
 			
@@ -126,8 +126,8 @@ public class DynamicSecurityManager implements SecurityManager {
 					result = authenticateOnMember(m, uname, pass);
 					gotoMember = m;
 					return result; //RETURN
-				} catch(AuthenticateFunction.RegionNotFoundException nfx){
-					//
+				} catch(Exception x){
+					// ok
 				}				
 			}
 		}

@@ -46,7 +46,7 @@ public class AuthenticateFunction implements Function {
 		
 		Region<String,User> gemusersRegion = CacheFactory.getAnyInstance().getRegion(DynamicSecurityManager.USERS_REGION);
 		if (gemusersRegion == null){
-			throw new RegionNotFoundException();
+			throw new RuntimeException("region not founct on " + CacheFactory.getAnyInstance().getDistributedSystem().getDistributedMember().getName());
 		}
 		
 		
@@ -65,9 +65,6 @@ public class AuthenticateFunction implements Function {
 		ctx.getResultSender().lastResult(result);
 	}
 	
-	public static class RegionNotFoundException extends RuntimeException implements Serializable {
-		
-	}
 }
 		
 		
