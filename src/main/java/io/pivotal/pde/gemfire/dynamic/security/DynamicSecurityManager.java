@@ -1,10 +1,10 @@
 package io.pivotal.pde.gemfire.dynamic.security;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.geode.LogWriter;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Execution;
@@ -15,6 +15,12 @@ import org.apache.geode.distributed.DistributedMember;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.ResourcePermission;
 import org.apache.geode.security.SecurityManager;
+
+import io.pivotal.pde.gemfire.dynamic.security.AuthenticateFunction;
+import io.pivotal.pde.gemfire.dynamic.security.BootstrapFunction;
+import io.pivotal.pde.gemfire.dynamic.security.GFAdmin;
+import io.pivotal.pde.gemfire.dynamic.security.GFPeer;
+import io.pivotal.pde.gemfire.dynamic.security.User;
 
 public class DynamicSecurityManager implements SecurityManager {
 
@@ -27,11 +33,10 @@ public class DynamicSecurityManager implements SecurityManager {
 	static final String SECURITY_PASS_PROP = "security-password";
 	static final String SECURITY_DISK_STORE_DIR_PROP = "security-disk-store-dir";
 	
-	static final String USERS_REGION = "gemusers";
-	static final String ROLES_REGION = "gemroles";
+	static final String USERS_REGION = "_gemusers";
 	
 	static Flag bypass = new Flag();  // thread local
-	static ThreadLocalPrincipal currPrincipal = new ThreadLocalPrincipal();
+	static ThreadLocalUser currPrincipal = new ThreadLocalUser();
 	
 	private String peerPassword;
 	private String adminPassword;
@@ -79,30 +84,26 @@ public class DynamicSecurityManager implements SecurityManager {
 			throw new AuthenticationFailedException("Authentication failed due to missing credentials");
 
 		if ( uname.equals(SECURITY_PEER_USER) && pass.equals(peerPassword))
-			return new Principal(Principal.Level.PEER);
+			return new GFPeer();
 		
 		if ( uname.equals(SECURITY_ADMIN_USER) && pass.equals(adminPassword)){
-			return new Principal(Principal.Level.ADMIN);
+			return new GFAdmin();
 		}
+		
 
 		// well this is a pain in the butt
 		// It's all because sometimes this will happen on a locator where 
 		// the region isn't present.
-		Principal result = null;
-		Region<String, String> gemusersRegion = CacheFactory.getAnyInstance().getRegion(USERS_REGION);
-		Region<String, String> gemrolesRegion = CacheFactory.getAnyInstance().getRegion(ROLES_REGION);
+		Object result = null;
+		Region<String, User> gemusersRegion = CacheFactory.getAnyInstance().getRegion(USERS_REGION);
 		if (gemusersRegion != null){
 			DynamicSecurityManager.bypass.set(true);
 			try {
-				String p = gemusersRegion.get(uname);
-				if (p == null || !p.equals(pass))
+				User u = gemusersRegion.get(uname);
+				if (u == null || ! u.passwordMatches(pass))
 					throw new AuthenticationFailedException("User does not exist or password does not match");
 				
-				String r = gemrolesRegion.get(uname);
-				if (r == null)
-					throw new AuthenticationFailedException("User has no privileges configured");
-				
-				result = new Principal(Principal.Level.valueOf(r));
+				result = u;
 			} finally {
 				DynamicSecurityManager.bypass.set(false);
 			}
@@ -138,30 +139,28 @@ public class DynamicSecurityManager implements SecurityManager {
 	public boolean authorize(Object principal, ResourcePermission permission) {
 		if (bypass.get()) return true;
 				
-		Principal p = (Principal) principal;
+		User u = (User) principal;
 		// peers authorize while joining the cluster but 
 		// admin will only access the cluster after it is up
 		// that is the perfect time to run initialization code
-		if (p.getLevel() == Principal.Level.ADMIN){		
+		if (u.getLevel() == User.Level.SECADMIN){		
 			if ( ! initializing.get()){
 				initializing.set(Boolean.TRUE);
 				initCluster();
 			}
 		}
 		
-		currPrincipal.set(p); 
-		return p.canDo(permission);
+		currPrincipal.set(u); 
+		return u.canDo(permission);
 	}
 
 	private void initCluster(){
-		LogWriter logger = CacheFactory.getAnyInstance().getSecurityLogger();
 		// this will cause it to target only data nodes
 		String []args = new String[] { securityDiskDir };
 		Execution exec = FunctionService.onMembers().setArguments(args);
 		Function bootstrapFunction = new BootstrapFunction();
 		ResultCollector<String,List<String>> results = exec.execute(bootstrapFunction);
 		List<String> result = results.getResult();
-		for (String r: result) logger.info(r);
 	}
 	
 	static class Flag extends ThreadLocal<Boolean> {
@@ -172,7 +171,7 @@ public class DynamicSecurityManager implements SecurityManager {
 		
 	}
 	
-	static class ThreadLocalPrincipal extends ThreadLocal<Principal>{
+	static class ThreadLocalUser extends ThreadLocal<User>{
 		
 	}
 	

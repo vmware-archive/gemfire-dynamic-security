@@ -7,6 +7,7 @@ import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
 import org.apache.geode.security.AuthenticationFailedException;
+import org.omg.CORBA.Principal;
 
 public class AuthenticateFunction implements Function {
 
@@ -43,28 +44,20 @@ public class AuthenticateFunction implements Function {
 			throw new RuntimeException("ERROR - the authenticate function expects to be invokes with a String[] argument containing two Strings");
 		}
 		
-		Region<String,String> gemusersRegion = CacheFactory.getAnyInstance().getRegion(DynamicSecurityManager.USERS_REGION);
+		Region<String,User> gemusersRegion = CacheFactory.getAnyInstance().getRegion(DynamicSecurityManager.USERS_REGION);
 		if (gemusersRegion == null){
 			throw new RegionNotFoundException();
 		}
 		
-		Region<String,String> gemrolesRegion = CacheFactory.getAnyInstance().getRegion(DynamicSecurityManager.ROLES_REGION);
-		if (gemrolesRegion == null){
-			throw new RegionNotFoundException();
-		}
 		
 		DynamicSecurityManager.bypass.set(Boolean.TRUE);
-		Principal result = null;
+		Object result = null;
 		try {
-			String p = gemusersRegion.get(args[0]);
-			if (p == null || !p.equals(args[1]))
+			User u = gemusersRegion.get(args[0]);
+			if (u == null || ! u.passwordMatches(args[1]))
 				throw new AuthenticationFailedException("User does not exist or password does not match");
 			
-			String r = gemrolesRegion.get(args[0]);
-			if (r == null)
-				throw new AuthenticationFailedException("User has no privileges configured");
-			
-			result = new Principal(Principal.Level.valueOf(r));
+			result = u;
 		} finally {
 			DynamicSecurityManager.bypass.set(Boolean.FALSE);
 		}
@@ -72,7 +65,7 @@ public class AuthenticateFunction implements Function {
 		ctx.getResultSender().lastResult(result);
 	}
 	
-	static class RegionNotFoundException extends RuntimeException implements Serializable {
+	public static class RegionNotFoundException extends RuntimeException implements Serializable {
 		
 	}
 }

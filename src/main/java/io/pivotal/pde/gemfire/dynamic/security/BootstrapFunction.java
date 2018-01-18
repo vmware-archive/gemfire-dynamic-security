@@ -4,6 +4,9 @@ import java.io.File;
 
 import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheFactory;
+import org.apache.geode.cache.ExpirationAction;
+import org.apache.geode.cache.ExpirationAttributes;
+import org.apache.geode.cache.Region;
 import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
@@ -42,13 +45,18 @@ public class BootstrapFunction implements Function {
 		Cache cache = CacheFactory.getAnyInstance();
 		if (cache.getRegion(DynamicSecurityManager.USERS_REGION) == null){
 			cache.createDiskStoreFactory().setAutoCompact(true).setDiskDirs(new File[]{new File(securityDiskDir)}).create(diskStoreName);
-			cache.createRegionFactory(RegionShortcut.REPLICATE_PERSISTENT).setDiskStoreName(diskStoreName).create(DynamicSecurityManager.USERS_REGION);
+			Region userRegion = 
+					cache.createRegionFactory(RegionShortcut.REPLICATE_PERSISTENT)
+						.setDiskStoreName(diskStoreName)
+						.create(DynamicSecurityManager.USERS_REGION);
+
 		}
 		
-		if (cache.getRegion(DynamicSecurityManager.ROLES_REGION) == null){
-			cache.createRegionFactory(RegionShortcut.REPLICATE_PERSISTENT).setDiskStoreName(diskStoreName).create(DynamicSecurityManager.ROLES_REGION);
-		}
-		
+		FunctionService.registerFunction(new ListUsersFunction());
+		FunctionService.registerFunction(new RemoveUserFunction());
+		FunctionService.registerFunction(new SetRoleFunction());
+		FunctionService.registerFunction(new PasswordFunction());
+				
 		ctx.getResultSender().lastResult("BoostrapFunction SUCCEEDED ON " + cache.getDistributedSystem().getDistributedMember().getName());
 	}
 	
