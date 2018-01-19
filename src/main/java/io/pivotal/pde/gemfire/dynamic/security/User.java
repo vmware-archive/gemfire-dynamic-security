@@ -41,6 +41,7 @@ public class User implements Serializable, PrivilegedActor {
 	private String level;
 	
 	public User(){
+		this.level = Level.MONITOR.toString();
 	}
 
 	public void setLevel(Level l){
@@ -78,10 +79,13 @@ public class User implements Serializable, PrivilegedActor {
 	public boolean canDo(ResourcePermission perm){		
 		
 		// SECADMIN can do anything
-		if (this.level == Level.SECADMIN.toString()) return true;
+		if (this.getLevel() == Level.SECADMIN) return true;
 
+		
 		// no one but SECADMIN can do anything at all with the gemusers  region
-		if (perm.getResource() == ResourcePermission.Resource.DATA && (perm.getTarget().equals(DynamicSecurityManager.USERS_REGION) || perm.getTarget().equals("*")) )
+		if (perm.getResource() == ResourcePermission.Resource.DATA 
+				&& (perm.getTarget().equals(DynamicSecurityManager.USERS_REGION) || perm.getTarget().equals("*")) 
+				&& ( perm.getOperation() == ResourcePermission.Operation.READ || perm.getOperation() == ResourcePermission.Operation.WRITE ))
 			return false;
 		
 		// peer is handled separately
@@ -114,5 +118,8 @@ public class User implements Serializable, PrivilegedActor {
 		}
 	}
 
-	
+	@Override
+	public String toString(){
+		return this.level;
+	}
 }

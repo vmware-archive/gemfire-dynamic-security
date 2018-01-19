@@ -58,8 +58,8 @@ public class BootstrapFunction implements Function {
 						.setDiskStoreName(diskStoreName)
 						.create(DynamicSecurityManager.USERS_REGION);
 
-			FunctionService.registerFunction(new ListUsersFunction());
 			FunctionService.registerFunction(new RemoveUserFunction());
+			FunctionService.registerFunction(new AddUserFunction());
 			FunctionService.registerFunction(new SetRoleFunction());
 			FunctionService.registerFunction(new PasswordFunction());
 		}

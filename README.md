@@ -64,11 +64,14 @@ SECADMIN - Can do anything including security administration tasks.
 The examples below illustrate how to use gfsh to perform security administration.
 
 ```
-# list users and their privileges
-gfsh> execute function --id=list_users
+# add a new user with WRITER privilege
+# if the user exists, both the password and the role will be set
+gfsh> execute function --id=add_user --arguments=username,password,WRITER --member=datanode2
 
-#add a new user or reset an existing user's password (does not affect privileges)
-gfsh> execute function --id=passwd --arguments=username,password  --member=datanode1
+
+# add a new user or reset an existing user's password (does not affect privileges)
+# new users created this way have MONITOR
+gfsh> execute function --id=set_password --arguments=username,password  --member=datanode1
 
 #set a users privileges (must be one of MONITOR, READER, WRITER, ADMIN or SECADMIN)
 gfsh> execute function --id=set_role --arguments=uname,WRITER  --member=datanode1
@@ -77,4 +80,14 @@ gfsh> execute function --id=set_role --arguments=uname,WRITER  --member=datanode
 gfsh> execute function --id=remove_user --arguments=fred  --member=datanode1
 ```
 
+# to list users, use the following query
+gfsh> query --query="select key,value.toString from /_gemusers.entries"
+
+
 # Security Notes #
+
+- User passwords are hashed together with a random salt.  Only the salt and the
+hash are stored, not the password.  When setting the password via a Function
+call the password will be sent to the server in clear text unless the connection
+is SSL enabled.  Also, the password will potentially be in the gfsh history.  
+This could be overcome by calling the Function via REST API.

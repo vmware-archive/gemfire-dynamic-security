@@ -1,52 +1,14 @@
 package io.pivotal.pde.gemfire.dynamic.security;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.CacheTransactionManager;
-import org.apache.geode.cache.CommitConflictException;
 import org.apache.geode.cache.Region;
-import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionContext;
-import org.apache.geode.security.ResourcePermission;
 
-import io.pivotal.pde.gemfire.dynamic.security.User.Level;
+public class RemoveUserFunction extends AdminFunction {
 
-public class RemoveUserFunction extends AdminFunction implements Function {
-
-	private ArrayList<ResourcePermission> requiredPermissions;
-	
-	public RemoveUserFunction(){
-		requiredPermissions = new ArrayList<ResourcePermission>(2);
-		requiredPermissions.add(new ResourcePermission(ResourcePermission.Resource.DATA,ResourcePermission.Operation.WRITE,DynamicSecurityManager.USERS_REGION));
-		requiredPermissions.add(new ResourcePermission(ResourcePermission.Resource.DATA,ResourcePermission.Operation.READ,DynamicSecurityManager.USERS_REGION));
-	}
-	
 	@Override
 	public String getId() {
 		return "remove_user";
-	}
-
-	@Override
-	public Collection getRequiredPermissions(String regionName) {
-		return requiredPermissions;
-	}
-
-	@Override
-	public boolean hasResult() {
-		return true;
-	}
-
-	@Override
-	public boolean isHA() {
-		return true; 
-		// all functions are idempotent
-	}
-
-	@Override
-	public boolean optimizeForWrite() {
-		return true;
 	}
 
 	@Override

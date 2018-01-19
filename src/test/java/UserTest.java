@@ -23,26 +23,26 @@ public class UserTest {
 		assertTrue(u.passwordMatches("opensesame"));
 	}
 	
-	@Test
-	public void testSerializationInGem(){
-       ServerLauncher serverLauncher  = 
-    		   new ServerLauncher.Builder().build();
-
-	   	serverLauncher.start();
-		try {
-			Region<String, User> testRegion = CacheFactory.getAnyInstance() 
-					.<String,User>createRegionFactory(RegionShortcut.LOCAL).create("test");
-			
-			User u = new User();
-			u.setPassword("pass");
-			testRegion.put("fred", u);
-			
-			u = testRegion.get("fred");
-			assertTrue(u.passwordMatches("pass"));	
-		} finally {
-			serverLauncher.stop();
-		}
-	}
+//	@Test
+//	public void testSerializationInGem(){
+//       ServerLauncher serverLauncher  = 
+//    		   new ServerLauncher.Builder().build();
+//
+//	   	serverLauncher.start();
+//		try {
+//			Region<String, User> testRegion = CacheFactory.getAnyInstance() 
+//					.<String,User>createRegionFactory(RegionShortcut.LOCAL).create("test");
+//			
+//			User u = new User();
+//			u.setPassword("pass");
+//			testRegion.put("fred", u);
+//			
+//			u = testRegion.get("fred");
+//			assertTrue(u.passwordMatches("pass"));	
+//		} finally {
+//			serverLauncher.stop();
+//		}
+//	}
 
 	@Test
 	public void testJavaSerialization(){

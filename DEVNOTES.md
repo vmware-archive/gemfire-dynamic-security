@@ -14,12 +14,37 @@
 - create a new cluster, log in to gfsh with gfadmin and create monitor
   user, stop cluster, start cluster and gfsh connect using monitor user.
   Ensure cluster is initialized using "list functions", "list regions" : PASS
-- if first access is from a client, ensure that cluster gets initialzed
+- MONITOR cannot create regions: PASS
+- MONITOR cannot query \_gemusers or execute security admin. Function: PASS
+- MONITOR cannot read or write data in regions: PASS
+- PEER cannot create regions: PASS
+- PEER cannot query \_gemusers or execute security admin. Function: PASS
+- PEER cannot read or write data in regions: PASS
+- READER cannot create regions: PASS
+- READER cannot query \_gemusers or execute security admin. Function: PASS
+- READER can read and query data in normal regions regions: PASS
+- READER cannot write data: PASS
+- WRITER cannot create regions: PASS
+- WRITER cannot query \_gemusers or execute security admin. Function: PASS
+- WRITER can read and query data in normal regions regions: PASS
+- WRITER can write data:  PASS
+- ADMIN can create regions: PASS
+- ADMIN cannot query \_gemusers or execute security admin. Function: PASS
+- ADMIN can read and query data in normal regions regions: PASS
+- ADMIN can write data:  PASS
+- SECADMIN can create regions: PASS
+- SECADMIN cannot query \_gemusers or execute security admin. Function: PASS
+- SECADMIN can read and query data in normal regions regions:PASS
+- SECADMIN can write data:  PASS
+
+
+- if first access is from a client, ensure that cluster gets initialized
   (what if client uses gfpeer ? should work but all client actions will
     not be authorized)
 
 # Possible Future Enhancements #
 
+- Automate the tests
 - Add region level privileges
 - The requirement to specify a member when running admin functions is
   undesirable but I can't see a way to remove it and still keep the "clientless"

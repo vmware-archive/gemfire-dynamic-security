@@ -6,31 +6,36 @@ import org.apache.geode.cache.CommitConflictException;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.FunctionContext;
 
-public class PasswordFunction extends AdminFunction  {
+public class AddUserFunction extends AdminFunction  {
 
 	
 	@Override
 	public String getId() {
-		return "set_password";
+		return "add_user";
 	}
-
+	
 	@Override
 	public void execute(FunctionContext ctx) {
 		Object argsObj = ctx.getArguments();
 		if (argsObj == null) {
-			sendError(ctx,"Please provide username and password arguments" );
+			sendError(ctx,"Please provide username, password and role arguments" );
 			return; //RETURN
 		}
 		
 		String []args = (String [])argsObj;
-		if (args.length !=2 ){
-			sendError(ctx, "Incorrect arguments were provided.  Please provide 2 arguments: username, password");
+		if (args.length !=3 ){
+			sendError(ctx, "Incorrect arguments were provided.  Please provide 3 arguments: username, password, role");
+			return; //RETURN
+		}
+		
+		if (args[0].equals("gfadmin") || args[0].equals("gfpeer")){
+			sendError(ctx,"Built in users  \'gfadmin\' and \'gfpeer\' cannot be modified dynamically.");
 			return; //RETURN
 		}
 
-		
-		if (args[0].equals("gfadmin") || args[0].equals("gfpeer")){
-			sendError(ctx,"The password for \'gfadmin\' and \'gfpeer\' cannot be set dynamically.");
+		String role = args[2];
+		if ( !User.isValidRole(role)){
+			sendError(ctx, "\'" + role + "\' is not a valid role.  Please provide one of: " + User.validRolesString());
 			return; //RETURN
 		}
 		
@@ -44,10 +49,11 @@ public class PasswordFunction extends AdminFunction  {
 			User u = userRegion.get(args[0]);
 			if (u == null) {
 				u = new User();
-				u.setLevel(User.Level.MONITOR);
 			}
 			
 			u.setPassword(args[1]);
+			u.setLevel(User.Level.valueOf(role));
+			
 			userRegion.put(args[0], u);
 			tm.commit();
 		} catch(CommitConflictException x){
@@ -57,7 +63,7 @@ public class PasswordFunction extends AdminFunction  {
 			if (tm.exists()) tm.rollback();
 		}
 		
-		ctx.getResultSender().lastResult(String.format("The password for %s was set.", args[0]));
+		ctx.getResultSender().lastResult(String.format("The password and role for %s were set.", args[0]));
 	}
 
 }
