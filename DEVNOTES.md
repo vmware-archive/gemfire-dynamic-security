@@ -36,11 +36,15 @@
 - SECADMIN cannot query \_gemusers or execute security admin. Function: PASS
 - SECADMIN can read and query data in normal regions regions:PASS
 - SECADMIN can write data:  PASS
+- The following test test the initialization login ...
+  - if the first thing to access the cluster is a client using gfadmin,
+    the client can use the cluster. PASS
+  - if the first thing to access the cluster is a client using gfpeer,
+    the client cannot access the cluster and a "Not Authorized" message is
+    given.  PASS
+  - if a client authenticating as a WRITER is the first thing to access the
+    cluster, the client is able to use the cluster.
 
-
-- if first access is from a client, ensure that cluster gets initialized
-  (what if client uses gfpeer ? should work but all client actions will
-    not be authorized)
 
 # Possible Future Enhancements #
 
