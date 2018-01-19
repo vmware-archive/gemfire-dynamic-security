@@ -1,26 +1,23 @@
 package io.pivotal.pde.gemfire.dynamic.security;
 
-import java.security.Principal;
+import java.io.File;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.Region;
+import org.apache.geode.cache.RegionShortcut;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.Function;
 import org.apache.geode.cache.execute.FunctionService;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.management.cli.CommandService;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.ResourcePermission;
 import org.apache.geode.security.SecurityManager;
-
-import io.pivotal.pde.gemfire.dynamic.security.AuthenticateFunction;
-import io.pivotal.pde.gemfire.dynamic.security.BootstrapFunction;
-import io.pivotal.pde.gemfire.dynamic.security.GFAdmin;
-import io.pivotal.pde.gemfire.dynamic.security.GFPeer;
-import io.pivotal.pde.gemfire.dynamic.security.User;
 
 public class DynamicSecurityManager implements SecurityManager {
 
@@ -36,15 +33,23 @@ public class DynamicSecurityManager implements SecurityManager {
 	static final String USERS_REGION = "_gemusers";
 	
 	static Flag bypass = new Flag();  // thread local
-	static ThreadLocalUser currPrincipal = new ThreadLocalUser();
 	
 	private String peerPassword;
 	private String adminPassword;
 	
 	String securityDiskDir;
 	
-	private Flag initializing = new Flag();  // prevents recursion
 	
+	// DynamicSecurityManager has some initialization tasks that can't
+	// be done in "init" because at least one data node needs to be up 
+	// and running 
+	private boolean initialized = false;
+	
+	// the gotoMember is just a member on which the AuthenticateFunction has already
+	// worked (it will work on any data node but not locators) - this avoids the 
+	// need to figure this out every time authenticate is called on a locator. 
+	// It may be possible to replace this by using FunctionService.onMember(groups ...) 
+	// to dispatch the AuthenticateFunction but which group should be used ?
 	private DistributedMember gotoMember = null;
 	
 	
@@ -85,6 +90,10 @@ public class DynamicSecurityManager implements SecurityManager {
 
 		if ( uname.equals(SECURITY_PEER_USER) && pass.equals(peerPassword))
 			return new GFPeer();
+		
+		// do the one time initialization here
+		initCluster();
+		
 		
 		if ( uname.equals(SECURITY_ADMIN_USER) && pass.equals(adminPassword)){
 			return new GFAdmin();
@@ -140,27 +149,25 @@ public class DynamicSecurityManager implements SecurityManager {
 		if (bypass.get()) return true;
 				
 		User u = (User) principal;
-		// peers authorize while joining the cluster but 
-		// admin will only access the cluster after it is up
-		// that is the perfect time to run initialization code
-		if (u.getLevel() == User.Level.SECADMIN){		
-			if ( ! initializing.get()){
-				initializing.set(Boolean.TRUE);
-				initCluster();
-			}
-		}
-		
-		currPrincipal.set(u); 
 		return u.canDo(permission);
 	}
 
-	private void initCluster(){
-		// this will cause it to target only data nodes
-		String []args = new String[] { securityDiskDir };
-		Execution exec = FunctionService.onMembers().setArguments(args);
-		Function bootstrapFunction = new BootstrapFunction();
-		ResultCollector<String,List<String>> results = exec.execute(bootstrapFunction);
-		List<String> result = results.getResult();
+	
+	private synchronized void initCluster(){
+		if (initialized) return;
+		
+		Cache cache = CacheFactory.getAnyInstance();
+		if (cache.isServer()){
+			 BootstrapFunction.initCluster(securityDiskDir);
+		} else {
+			String []args = new String[] { securityDiskDir };
+			Execution exec = FunctionService.onMembers().setArguments(args);
+			Function bootstrapFunction = new BootstrapFunction();
+			ResultCollector<String,List<String>> results = exec.execute(bootstrapFunction);
+			List<String> result = results.getResult();
+		}
+		
+		this.initialized = true;
 	}
 	
 	static class Flag extends ThreadLocal<Boolean> {

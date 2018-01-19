@@ -40,6 +40,14 @@ public class BootstrapFunction implements Function {
 	public void execute(FunctionContext ctx) {
 		String []args = (String[]) ctx.getArguments();
 		String securityDiskDir = args[0];
+		
+		BootstrapFunction.initCluster(securityDiskDir);
+				
+		Cache cache = CacheFactory.getAnyInstance();
+		ctx.getResultSender().lastResult("BoostrapFunction SUCCEEDED ON " + cache.getDistributedSystem().getDistributedMember().getName());
+	}
+
+	public static void initCluster(String securityDiskDir){
 		String diskStoreName = "gemusers-disk-store";
 		
 		Cache cache = CacheFactory.getAnyInstance();
@@ -50,14 +58,10 @@ public class BootstrapFunction implements Function {
 						.setDiskStoreName(diskStoreName)
 						.create(DynamicSecurityManager.USERS_REGION);
 
+			FunctionService.registerFunction(new ListUsersFunction());
+			FunctionService.registerFunction(new RemoveUserFunction());
+			FunctionService.registerFunction(new SetRoleFunction());
+			FunctionService.registerFunction(new PasswordFunction());
 		}
-		
-		FunctionService.registerFunction(new ListUsersFunction());
-		FunctionService.registerFunction(new RemoveUserFunction());
-		FunctionService.registerFunction(new SetRoleFunction());
-		FunctionService.registerFunction(new PasswordFunction());
-				
-		ctx.getResultSender().lastResult("BoostrapFunction SUCCEEDED ON " + cache.getDistributedSystem().getDistributedMember().getName());
 	}
-	
 }
