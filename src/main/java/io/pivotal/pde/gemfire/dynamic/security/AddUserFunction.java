@@ -2,6 +2,9 @@ package io.pivotal.pde.gemfire.dynamic.security;
 
 import org.apache.geode.cache.CacheFactory;
 import org.apache.geode.cache.CacheTransactionManager;
+/*
+ * Copyright (c) 2018 Pivotal Software, Inc. All Rights Reserved.
+ */
 import org.apache.geode.cache.CommitConflictException;
 import org.apache.geode.cache.Region;
 import org.apache.geode.cache.execute.FunctionContext;

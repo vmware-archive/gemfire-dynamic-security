@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2018 Pivotal Software, Inc. All Rights Reserved.
+ */
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;

@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2018 Pivotal Software, Inc. All Rights Reserved.
+ */
 package io.pivotal.pde.gemfire.dynamic.security;
 
 import java.io.Serializable;
