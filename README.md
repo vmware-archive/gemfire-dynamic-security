@@ -3,15 +3,8 @@ This project is a GemFire 9.2+ SecurityManager implementation that allows
 privileges  and passwords to be modified at runtime. All security administration
 tasks can be accomplished with gfsh. There is no need for a separate security
 admin. tool and security changes take effect immediately without the need
-to restart cluster members.
-
-The implementation has a built in user called "gfadmin" who will have all
-privileges. The "gfadmin" user cannot be delete and it's privileges can't be changed.  The password cannot be changed except by setting the property and performing a restart.  However, additional security administrators can be created.
-
-Similarly, the cluster members authenticate each other using a fixed user,
-"gfpeer" which has only the minimum permissions required to join the cluster.
-The "gfpeer" password is set with the "security-peer-password" setting and
-cannot be changed.
+to restart cluster members. All administration tasks are supported through
+Functions that are provided
 
 # Setup #
 
@@ -62,6 +55,16 @@ create additional users and control who can do what.  The details are provided
 below.
 
 # Security Model #
+
+The implementation has a built in user called "gfadmin" who will have all
+privileges. The "gfadmin" user cannot be delete and it's privileges can't be changed.  
+The password cannot be changed except by setting the property and performing a restart.  
+However, additional security administrators can be created.
+
+Similarly, the cluster members authenticate each other using a fixed user,
+"gfpeer" which has only the minimum permissions required to join the cluster.
+The "gfpeer" password is set with the "security-peer-password" setting and
+cannot be changed.
 
 The security model supports the following roles. _Each role has all the
 permissions of all of the earlier roles except for those of PEER_.
