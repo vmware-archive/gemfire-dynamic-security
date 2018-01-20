@@ -3,8 +3,8 @@ This project is a GemFire 9.2+ SecurityManager implementation that allows
 privileges  and passwords to be modified at runtime. All security administration
 tasks can be accomplished with gfsh. There is no need for a separate security
 admin. tool and security changes take effect immediately without the need
-to restart cluster members. All administration tasks are supported through
-Functions that are provided
+to restart cluster members. User administration  tasks are supported through
+a set of Functions that are installed by the SecurityManager.
 
 # Setup #
 
