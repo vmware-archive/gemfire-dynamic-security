@@ -59,7 +59,7 @@ shut down all data nodes when it is done.
 4. Start the cluster (it is now ready for use)
 
 __The script contains locations for disks stores, don't forget to update these
-to appropriate values before running it. __
+to appropriate values before running it.__
 
 The script contents are below.
 
@@ -71,7 +71,8 @@ echo --string="waiting for disk store creation"
 sleep --time=10
 create region --name=_gemusers --type=REPLICATE_PERSISTENT --disk-store=security-disk-store
 configure pdx --read-serialized=true --disk-store=pdx-disk-store
-shutdown```
+shutdown
+```
 
 The script can be run with a command similar to the following (it will need to
   be run as "gfadmin").
