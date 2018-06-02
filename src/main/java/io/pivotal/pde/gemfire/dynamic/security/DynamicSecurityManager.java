@@ -31,7 +31,6 @@ public class DynamicSecurityManager implements SecurityManager {
 	static final String SECURITY_PEER_PASS_PROP = "security-peer-password";
 	static final String SECURITY_UNAME_PROP = "security-username";
 	static final String SECURITY_PASS_PROP = "security-password";
-	static final String SECURITY_DISK_STORE_DIR_PROP = "security-disk-store-dir";
 	
 	static final String USERS_REGION = "_gemusers";
 	
@@ -60,11 +59,6 @@ public class DynamicSecurityManager implements SecurityManager {
 	public void init(Properties securityProps) {
 		this.peerPassword = securityProps.getProperty(SECURITY_PEER_PASS_PROP);
 		this.adminPassword = securityProps.getProperty(SECURITY_ADMIN_PASS_PROP);
-		this.securityDiskDir = securityProps.getProperty(SECURITY_DISK_STORE_DIR_PROP);
-		
-		if (securityDiskDir == null)
-			throw new RuntimeException("Could not initialize security manager due to missing required property: " + SECURITY_DISK_STORE_DIR_PROP);
-		
 		if (this.peerPassword == null)
 			throw new RuntimeException("Could not initialize security manager due to missing required property: " + SECURITY_PEER_PASS_PROP);
 		
@@ -93,17 +87,13 @@ public class DynamicSecurityManager implements SecurityManager {
 
 		if ( uname.equals(SECURITY_PEER_USER) && pass.equals(peerPassword))
 			return new GFPeer();
-		
-		// do the one time initialization here
-		initCluster();
-		
-		
+				
 		if ( uname.equals(SECURITY_ADMIN_USER) && pass.equals(adminPassword)){
 			return new GFAdmin();
 		}
 		
 
-		// well this is a pain in the butt
+		// well this is a pain in the rear!
 		// It's all because sometimes this will happen on a locator where 
 		// the region isn't present.
 		Object result = null;
@@ -155,24 +145,7 @@ public class DynamicSecurityManager implements SecurityManager {
 		return u.canDo(permission);
 	}
 
-	
-	private synchronized void initCluster(){
-		if (initialized) return;
 		
-		Cache cache = CacheFactory.getAnyInstance();
-		if (cache.isServer()){
-			 BootstrapFunction.initCluster(securityDiskDir);
-		} else {
-			String []args = new String[] { securityDiskDir };
-			Execution exec = FunctionService.onMembers().setArguments(args);
-			Function bootstrapFunction = new BootstrapFunction();
-			ResultCollector<String,List<String>> results = exec.execute(bootstrapFunction);
-			List<String> result = results.getResult();
-		}
-		
-		this.initialized = true;
-	}
-	
 	static class Flag extends ThreadLocal<Boolean> {
 		@Override
 		protected Boolean initialValue() {

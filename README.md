@@ -6,7 +6,19 @@ admin. tool and security changes take effect immediately without the need
 to restart cluster members. User administration  tasks are supported through
 a set of Functions that are installed by the SecurityManager.
 
+The solution comes with two built-in users that are used for bootstrapping
+purposes.  The built-in users are "gfadmin" and "gfpeer".  "gfadmin" has all
+privileges including the ability to add new users and grant permissions. "gfpeer"
+is used by the cluster members to authenticate to each other.  The built-in users
+cannot be removed but their passwords are set using properties.
+
 # Setup #
+
+Build gemfire-dynamic-security-n.n.jar
+
+```
+mvn package
+```
 
 To use gemfire-dynamic-security ensure that _gemfire-dynamic-security-n.n.jar_
 is on the class path and set the following properties on all cluster members.
@@ -15,36 +27,58 @@ is on the class path and set the following properties on all cluster members.
 security-manager=io.pivotal.pde.gemfire.dynamic.security.DynamicSecurityManager
 security-peer-password=passw0rd
 security-admin-password=opensesame
-security-disk-store-dir=/data/security
 security-username=gfpeer
 security-password=passw0rd
 ```
 
-The _security-peer-password_ and _security-admin-password_ settings give the passwords for the two previously mentioned fixed accounts. __Please use different passwords for your cluster!__
-
-The security regions are persistent.  They will use a disk store named
-_security-disk-store_ and, if passed, the disk store will be created in the
-directory specified by the _security-disk-store-dir_ setting.
+The _security-peer-password_ and _security-admin-password_ settings give the
+passwords for the two previously mentioned fixed accounts. __Please use
+different passwords for your cluster!__
 
 The _security-username_ and _security-password_ settings control the
 credentials that each member presents when joining the cluster.  The
 _security-username_ setting must be "gfpeer" and the _security-password_
 setting must have the same value as the _security-peer-password_ setting.
 
-Lastly, the cluster must use persistent pdx metadata.  There are several
-ways to accomplish this.  Below is one procedure for making pdx metadata persistent.
+Lastly, the cluster must be initialized before the first use.
 
-1. Start the cluster.
-2. Connect with gfsh and sign in with the "gfadmin" user.
-3. Run the following gfsh commands (adjust to put the metadata in your desired location)
-   ```
-   gfsh>create disk-store --name=pdx-disk-store --dir=data/pdx
-   gfsh>configure pdx  --disk-store=pdx-disk-store
-   gfsh>shutdown
-   ```
-   This will stop all data nodes.  It is necessary to do this in order for
-   the changes to take effect.
-4. Start the cluster
+## One Time Cluster Initialization Procedure ##
+
+A persistent region called "_gemusers" must be created and because there is
+persistent data you will need to configure pdx persistence as well.  A gfsh
+script, "init_cluster.gfsh" is supplied for the purpose.
+
+At least one data node must be up to create a region via gfsh but pdx related
+configurations do not apply to data nodes that are already started.  Therefore,
+the general procedure is for cluster initialization is:
+
+1. Start the cluster
+2. Review and edit the init script
+3. Connect to the cluster and run the script.  The script will automatically
+shut down all data nodes when it is done.
+4. Start the cluster (it is now ready for use)
+
+__The script contains locations for disks stores, don't forget to update these
+to appropriate values before running it. __
+
+The script contents are below.
+
+```
+deploy --jar=target/gemfire-dynamic-security-1.1.1.jar  
+create disk-store --name=pdx-disk-store --dir=EDIT_THIS --allow-force-compaction=true
+create disk-store --name=security-disk-store --dir=EDIT_THIS --allow-force-compaction=true
+echo --string="waiting for disk store creation"
+sleep --time=10
+create region --name=_gemusers --type=REPLICATE_PERSISTENT --disk-store=security-disk-store
+configure pdx --read-serialized=true --disk-store=pdx-disk-store
+shutdown```
+
+The script can be run with a command similar to the following (it will need to
+  be run as "gfadmin").
+
+```
+gfsh -e "connect --locator=loctorhost[10334] --user=gfadmin --password=opensesame" -e "run --file=init_cluster.gfsh"
+```
 
 This procedure only needs to be done the first time the cluster is started.
 Thereafter, assuming the cluster configuration service has not been disabled,

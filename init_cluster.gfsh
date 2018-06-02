@@ -1,0 +1,8 @@
+deploy --jar=target/gemfire-dynamic-security-1.1.1.jar
+create disk-store --name=pdx-disk-store --dir=data/pdx --allow-force-compaction=true
+create disk-store --name=security-disk-store --dir=data/security --allow-force-compaction=true
+echo --string="waiting for disk store creation"
+sleep --time=10
+create region --name=_gemusers --type=REPLICATE_PERSISTENT --disk-store=security-disk-store
+configure pdx --read-serialized=true --disk-store=pdx-disk-store
+shutdown
