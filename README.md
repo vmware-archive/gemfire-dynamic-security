@@ -1,4 +1,4 @@
-# Overview
+<h1> VMware has ended active development of this project, this repository will no longer be updated.</h1><br># Overview
 This project is a GemFire 9.2+ SecurityManager implementation that allows
 privileges  and passwords to be modified at runtime. All security administration
 tasks can be accomplished with gfsh. There is no need for a separate security
